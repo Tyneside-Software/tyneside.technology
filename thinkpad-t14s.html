@@ -55,7 +55,7 @@
       <a class="btn btn-secondary btn-lg" href="#specs">Full specs</a>
     </div>
     <p class="hero-meta">
-      Secure checkout via Tide · Not affiliated with Lenovo
+      Buy over WhatsApp · Not affiliated with Lenovo
     </p>
   </div>
 </header>
@@ -249,64 +249,34 @@
   var cfg = window.TYNESIDE_SHOP || {};
   var p = cfg.product || { id: "t14-gen1-250", price: 250, inStock: true };
   var btn = document.getElementById("buyNowBtn");
-  var errEl = document.getElementById("buyError");
   var stockStatus = document.getElementById("stockStatus");
   var stockBadge = document.getElementById("stockBadge");
-  var note = document.getElementById("productNote");
-  var waAlt = document.getElementById("waAlt");
 
-  var tideUrl = (cfg.tideCheckoutUrl || "").trim();
-  var hasTide = /^https?:\/\//i.test(tideUrl);
   var waUrl =
     cfg.whatsappBuyUrl ||
     "https://wa.me/447411949215?text=" +
-      encodeURIComponent("Hello — I'd like to buy the ThinkPad T14 Gen 1 for £250.");
-
-  function setError(msg) {
-    if (!errEl) return;
-    if (!msg) {
-      errEl.style.display = "none";
-      errEl.textContent = "";
-      return;
-    }
-    errEl.style.display = "block";
-    errEl.textContent = msg;
-  }
+      encodeURIComponent(
+        "Hello — I'd like to buy the ThinkPad T14 Gen 1 for £250 (t14-gen1-250)."
+      );
 
   var inStock = p.inStock !== false;
   var price = p.price || 250;
 
   if (stockStatus) {
     stockStatus.textContent = inStock
-      ? "In stock — one model only at £" + price + ". Works fully on GitHub Pages (no server)."
+      ? "In stock — one model only at £" + price + ". Message on WhatsApp to buy."
       : "Currently unavailable. WhatsApp us if you need something similar.";
   }
   if (stockBadge) {
     stockBadge.textContent = inStock ? "In stock" : "Out of stock";
     stockBadge.className = "deal-badge " + (inStock ? "badge-good" : "badge-skip");
   }
-  if (note) {
-    note.textContent = hasTide
-      ? "Buy Now opens Tide Instant Checkout for £" + price + " — pure client-side, no Node."
-      : "Tide link not set yet in shop-config.js — Buy Now will open WhatsApp so you can still order.";
-  }
-  if (waAlt) waAlt.href = waUrl;
 
   if (btn) {
     btn.disabled = !inStock;
-    btn.textContent = inStock
-      ? hasTide
-        ? "Buy Now · £" + price
-        : "Buy via WhatsApp · £" + price
-      : "Out of stock";
-
+    btn.textContent = inStock ? "Buy on WhatsApp · £" + price : "Out of stock";
     btn.addEventListener("click", function () {
       if (!inStock) return;
-      setError("");
-      if (hasTide) {
-        window.location.href = tideUrl;
-        return;
-      }
       window.location.href = waUrl;
     });
   }
