@@ -159,13 +159,14 @@
             Solid renewed ThinkPad for work, study, and everyday use — fair fixed price, no comparison maze.
           </p>
           <p class="deal-note" id="productNote">
-            Pay securely with Tide Instant Checkout. We’ll confirm the order when payment lands.
+            Pure static shop — works on GitHub Pages. Pay via Tide when a payment link is configured;
+            otherwise Buy Now opens WhatsApp.
           </p>
           <div class="deal-actions">
-            <button type="button" class="btn btn-fill buy-now-btn" id="buyNowBtn" data-product-id="t14-gen1-250">
+            <button type="button" class="btn btn-fill buy-now-btn" id="buyNowBtn">
               Buy Now · £250
             </button>
-            <a class="btn btn-secondary" href="https://wa.me/447411949215" rel="noopener" target="_blank">WhatsApp first</a>
+            <a class="btn btn-secondary" id="waAlt" href="https://wa.me/447411949215" rel="noopener" target="_blank">WhatsApp first</a>
           </div>
           <p id="buyError" class="deal-note" style="color:#f87171;display:none;margin-top:0.75rem"></p>
         </div>
@@ -182,21 +183,21 @@
         <span class="n">1</span>
         <div>
           <h3>Buy Now</h3>
-          <p>Creates an order and sends you to Tide to pay £250 (card / Apple Pay as Tide supports).</p>
+          <p>Opens Tide Instant Checkout for £250 (or WhatsApp if the Tide link is not set yet).</p>
         </div>
       </li>
       <li>
         <span class="n">2</span>
         <div>
-          <h3>We confirm payment</h3>
-          <p>When Tide shows paid, we mark the order complete and (optionally) get a WhatsApp alert.</p>
+          <h3>Pay</h3>
+          <p>Complete payment in Tide (card / Apple Pay as Tide supports). No Node server required.</p>
         </div>
       </li>
       <li>
         <span class="n">3</span>
         <div>
           <h3>We sort fulfilment</h3>
-          <p>We’ll arrange handover or shipping for this renewed ThinkPad.</p>
+          <p>We’ll arrange handover or shipping for this renewed ThinkPad once payment is in.</p>
         </div>
       </li>
     </ol>
@@ -242,14 +243,24 @@
   </p>
 </footer>
 
+<script src="shop-config.js"></script>
 <script>
 (function () {
-  var PRODUCT_ID = "t14-gen1-250";
+  var cfg = window.TYNESIDE_SHOP || {};
+  var p = cfg.product || { id: "t14-gen1-250", price: 250, inStock: true };
   var btn = document.getElementById("buyNowBtn");
   var errEl = document.getElementById("buyError");
   var stockStatus = document.getElementById("stockStatus");
   var stockBadge = document.getElementById("stockBadge");
-  var checkoutInFlight = false;
+  var note = document.getElementById("productNote");
+  var waAlt = document.getElementById("waAlt");
+
+  var tideUrl = (cfg.tideCheckoutUrl || "").trim();
+  var hasTide = /^https?:\/\//i.test(tideUrl);
+  var waUrl =
+    cfg.whatsappBuyUrl ||
+    "https://wa.me/447411949215?text=" +
+      encodeURIComponent("Hello — I'd like to buy the ThinkPad T14 Gen 1 for £250.");
 
   function setError(msg) {
     if (!errEl) return;
@@ -262,106 +273,45 @@
     errEl.textContent = msg;
   }
 
-  function applyProduct(p) {
-    if (!p) return;
-    var inStock = p.inStock !== false;
-    if (stockStatus) {
-      stockStatus.textContent = inStock
-        ? "In stock — one model only at £" + p.price + "."
-        : "Currently unavailable. WhatsApp us if you need something similar.";
-    }
-    if (stockBadge) {
-      stockBadge.textContent = inStock ? "In stock" : "Out of stock";
-      stockBadge.className = "deal-badge " + (inStock ? "badge-good" : "badge-skip");
-    }
-    if (btn) {
-      btn.disabled = !inStock;
-      btn.textContent = inStock ? "Buy Now · £" + p.price : "Out of stock";
-      btn.setAttribute("data-product-id", p.id || PRODUCT_ID);
-    }
-  }
+  var inStock = p.inStock !== false;
+  var price = p.price || 250;
 
-  function buyNow(productId, buttonEl) {
-    if (checkoutInFlight) return;
-    checkoutInFlight = true;
-    setError("");
-    var original = buttonEl.textContent;
-    buttonEl.disabled = true;
-    buttonEl.textContent = "Redirecting…";
-
-    fetch("/api/create-checkout-session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productId: productId, quantity: 1 }),
-    })
-      .then(function (res) {
-        return res.json().then(function (data) {
-          return { ok: res.ok, status: res.status, data: data };
-        });
-      })
-      .then(function (result) {
-        if (!result.ok) {
-          var msg =
-            (result.data && (result.data.error || result.data.message)) ||
-            "Checkout failed (" + result.status + ").";
-          if (result.status === 503) {
-            msg =
-              "Payments not configured yet. Message us on WhatsApp to buy, or set TIDE_LINK_T14_GEN1_250 on the server.";
-          }
-          throw new Error(msg);
-        }
-        var url = result.data.url || result.data.checkoutUrl;
-        if (!url) throw new Error("No checkout URL returned.");
-        window.location.href = url;
-      })
-      .catch(function (e) {
-        setError(e.message || "Could not start checkout.");
-        buttonEl.disabled = false;
-        buttonEl.textContent = original;
-        checkoutInFlight = false;
-      });
+  if (stockStatus) {
+    stockStatus.textContent = inStock
+      ? "In stock — one model only at £" + price + ". Works fully on GitHub Pages (no server)."
+      : "Currently unavailable. WhatsApp us if you need something similar.";
   }
+  if (stockBadge) {
+    stockBadge.textContent = inStock ? "In stock" : "Out of stock";
+    stockBadge.className = "deal-badge " + (inStock ? "badge-good" : "badge-skip");
+  }
+  if (note) {
+    note.textContent = hasTide
+      ? "Buy Now opens Tide Instant Checkout for £" + price + " — pure client-side, no Node."
+      : "Tide link not set yet in shop-config.js — Buy Now will open WhatsApp so you can still order.";
+  }
+  if (waAlt) waAlt.href = waUrl;
 
   if (btn) {
+    btn.disabled = !inStock;
+    btn.textContent = inStock
+      ? hasTide
+        ? "Buy Now · £" + price
+        : "Buy via WhatsApp · £" + price
+      : "Out of stock";
+
     btn.addEventListener("click", function () {
-      buyNow(btn.getAttribute("data-product-id") || PRODUCT_ID, btn);
+      if (!inStock) return;
+      setError("");
+      if (hasTide) {
+        window.location.href = tideUrl;
+        return;
+      }
+      window.location.href = waUrl;
     });
   }
-
-  // Prefer live catalogue; fall back to fixed £250 listing
-  fetch("/api/products")
-    .then(function (r) {
-      return r.ok ? r.json() : null;
-    })
-    .then(function (data) {
-      var p =
-        data &&
-        data.products &&
-        data.products.find(function (x) {
-          return x.id === PRODUCT_ID;
-        });
-      if (p) {
-        applyProduct(p);
-      } else {
-        applyProduct({
-          id: PRODUCT_ID,
-          price: 250,
-          inStock: true,
-        });
-        if (stockStatus) {
-          stockStatus.textContent =
-            "In stock — £250 (static page). Run the Node server for Tide checkout.";
-        }
-      }
-    })
-    .catch(function () {
-      applyProduct({ id: PRODUCT_ID, price: 250, inStock: true });
-      if (stockStatus) {
-        stockStatus.textContent =
-          "In stock — £250 (static page). Run the Node server for Tide checkout.";
-      }
-    });
 })();
 </script>
 </body>
 </html>
+

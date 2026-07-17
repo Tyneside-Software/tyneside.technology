@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Payment submitted · Tyneside Technology</title>
+  <title>Thanks · Tyneside Technology</title>
   <link rel="icon" href="logo.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="layout.css?v=20260716n">
-  <link rel="stylesheet" href="themes.css?v=20260716n">
+  <link rel="stylesheet" href="layout.css?v=20260717b">
+  <link rel="stylesheet" href="themes.css?v=20260717b">
 </head>
 <body class="site theme-technology">
 
@@ -27,34 +27,24 @@
       <a href="thinkpad-t14s.html">SHOP</a>
     </div>
     <div class="nav-cta">
-      <a class="btn btn-fill btn-shop" href="thinkpad-t14s.html" aria-label="Shop ThinkPad">Shop ThinkPad</a>
+      <a class="btn btn-fill btn-shop" href="thinkpad-t14s.html">Shop · £250</a>
     </div>
   </div>
 </nav>
 
 <header class="hero">
   <div class="wrap">
-    <p class="hero-kicker">Tide checkout</p>
+    <p class="hero-kicker">Checkout</p>
     <h1>THANK YOU</h1>
-    <p class="hero-tag" id="statusLine">Thanks — please complete payment in Tide if you haven’t already.</p>
-    <p class="hero-lead" id="detailLine">
-      Card payment runs on Tide Instant Checkout / Payment Links.
-      We mark the order paid when payment is confirmed on our side (not only by visiting this page).
+    <p class="hero-tag">If you paid in Tide, keep any receipt — we’ll follow up on fulfilment.</p>
+    <p class="hero-lead">
+      This site is static (GitHub Pages). Payment happens on Tide’s page.
+      WhatsApp us if anything is unclear.
     </p>
-    <div class="panel" style="margin:1.5rem auto 0;max-width:28rem;text-align:left">
-      <p style="margin:0 0 0.5rem"><strong>Order reference</strong></p>
-      <p id="orderRef" style="margin:0;font-size:1.25rem;color:var(--accent);font-variant-numeric:tabular-nums">—</p>
-      <p id="orderMeta" style="margin:0.85rem 0 0;color:var(--muted);font-size:0.95rem"></p>
-    </div>
     <div class="hero-actions">
-      <a class="btn btn-fill btn-lg" href="thinkpad-t14s.html">Back to store</a>
-      <a class="btn btn-secondary btn-lg" href="index.html">Tech home</a>
+      <a class="btn btn-fill btn-lg" href="thinkpad-t14s.html">Back to shop</a>
+      <a class="btn btn-secondary btn-lg" href="https://wa.me/447411949215" rel="noopener" target="_blank">WhatsApp · +44 7411 949215</a>
     </div>
-    <p class="hero-meta">
-      Questions? WhatsApp
-      <a href="https://wa.me/447411949215" rel="noopener" target="_blank">+44 7411 949215</a>
-      and quote your order reference.
-    </p>
   </div>
 </header>
 
@@ -68,65 +58,7 @@
     <a href="https://tyneside.games/" target="_blank" rel="noopener noreferrer">GAMES</a>
     <a href="thinkpad-t14s.html">SHOP</a>
   </div>
-  <p class="legal">
-    Tyneside Software Ltd · Howden Community Hub · Part of the Tyneside family
-  </p>
+  <p class="legal">Tyneside Software Ltd · Howden Community Hub · Part of the Tyneside family</p>
 </footer>
-
-<script>
-  (function () {
-    var params = new URLSearchParams(window.location.search);
-    var orderRef = params.get("order_ref") || params.get("orderRef");
-    var statusLine = document.getElementById("statusLine");
-    var detailLine = document.getElementById("detailLine");
-    var orderRefEl = document.getElementById("orderRef");
-    var orderMeta = document.getElementById("orderMeta");
-
-    if (!orderRef) {
-      statusLine.textContent = "Thanks for your interest";
-      detailLine.textContent =
-        "If you paid via Tide, keep any receipt from Tide. Message us on WhatsApp if you need help.";
-      return;
-    }
-
-    orderRefEl.textContent = orderRef;
-
-    fetch("/api/orders/" + encodeURIComponent(orderRef))
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        if (data.error) {
-          statusLine.textContent = "Order recorded";
-          detailLine.textContent =
-            "We have your reference. Payment is confirmed separately when Tide settles and our webhook/ops step runs.";
-          return;
-        }
-        if (data.status === "paid") {
-          statusLine.textContent = "Payment confirmed";
-          detailLine.textContent =
-            "Your order is marked paid. We’ll be in touch about handover or delivery.";
-        } else {
-          statusLine.textContent = "Awaiting Tide payment confirmation";
-          detailLine.textContent =
-            "Complete payment on the Tide page if you still have it open. This success page does not mark the order paid by itself.";
-        }
-        var bits = [];
-        if (data.productName) bits.push(data.productName);
-        if (data.quantity) bits.push("Qty " + data.quantity);
-        if (data.totalPence != null) {
-          bits.push(
-            new Intl.NumberFormat("en-GB", {
-              style: "currency",
-              currency: (data.currency || "gbp").toUpperCase(),
-            }).format(data.totalPence / 100)
-          );
-        }
-        if (data.customerEmail) bits.push(data.customerEmail);
-        orderMeta.textContent = bits.join(" · ");
-      })
-      .catch(function () {
-        statusLine.textContent = "Thanks — keep your order reference";
-      });
-  })();
-</script>
 </body>
 </html>
