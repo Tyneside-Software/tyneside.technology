@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout cancelled · Tyneside Technology</title>
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="layout.css?v=20260716n">
+  <link rel="stylesheet" href="themes.css?v=20260716n">
+</head>
+<body class="site theme-technology">
+
+<nav class="site-nav" aria-label="Primary">
+  <div class="inner">
+    <a href="index.html" class="brand-link">
+      <img src="logo.svg" width="38" height="38" alt="Tyneside Technology">
+      <span class="brand-word">TYNESIDE</span>
+      <span class="brand-sub">TECH</span>
+    </a>
+    <div class="nav-links">
+      <a href="https://tyneside.software/" target="_blank" rel="noopener noreferrer">SOFTWARE</a>
+      <a href="https://tyneside.cleaning/" target="_blank" rel="noopener noreferrer">CLEANING</a>
+      <a href="https://tyneside.charity/" target="_blank" rel="noopener noreferrer">CHARITY</a>
+      <a href="https://tyneside.group/" target="_blank" rel="noopener noreferrer">GROUP</a>
+      <a href="index.html">TECH</a>
+      <a href="https://tyneside.games/" target="_blank" rel="noopener noreferrer">GAMES</a>
+      <a href="thinkpad-t14s.html">SHOP</a>
+    </div>
+    <div class="nav-cta">
+      <a class="btn btn-fill btn-shop" href="thinkpad-t14s.html" aria-label="Shop ThinkPad">Shop ThinkPad</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="hero-kicker">Tide checkout</p>
+    <h1>NO CHARGE MADE</h1>
+    <p class="hero-tag">You left checkout before paying. Nothing was taken via Tide.</p>
+    <p class="hero-lead">
+      Pick a laptop again whenever you’re ready — or message us if you’d rather
+      arrange purchase over WhatsApp.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-fill btn-lg" id="backStore" href="thinkpad-t14s.html#deals">Back to deals</a>
+      <a class="btn btn-secondary btn-lg" href="https://wa.me/447411949215" rel="noopener" target="_blank">WhatsApp us</a>
+    </div>
+  </div>
+</header>
+
+<footer class="site-footer">
+  <div class="footer-brands">
+    <a href="https://tyneside.software/" target="_blank" rel="noopener noreferrer">SOFTWARE</a>
+    <a href="https://tyneside.cleaning/" target="_blank" rel="noopener noreferrer">CLEANING</a>
+    <a href="https://tyneside.charity/" target="_blank" rel="noopener noreferrer">CHARITY</a>
+    <a href="https://tyneside.group/" target="_blank" rel="noopener noreferrer">GROUP</a>
+    <a href="index.html">TECH</a>
+    <a href="https://tyneside.games/" target="_blank" rel="noopener noreferrer">GAMES</a>
+    <a href="thinkpad-t14s.html">SHOP</a>
+  </div>
+  <p class="legal">Tyneside Software Ltd · Part of the Tyneside family</p>
+</footer>
+
+<script>
+  var product = new URLSearchParams(location.search).get("product");
+  if (product) {
+    document.getElementById("backStore").href =
+      "thinkpad-t14s.html#deals";
+  }
+</script>
+</body>
+</html>

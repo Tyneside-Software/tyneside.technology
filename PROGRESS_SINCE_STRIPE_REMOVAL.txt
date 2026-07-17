@@ -1,0 +1,222 @@
+Tyneside Technology — progress since Stripe removal
+====================================================
+Written: 2026-07-16
+Repo: /Users/erzahgk/Desktop/tyneside.technology-main
+
+
+1. Why Stripe was removed
+-------------------------
+You asked to use Tide instead of Stripe for payments.
+
+Important constraint discovered during the change:
+
+  • Tide does NOT offer a public “create Checkout Session” API like Stripe.
+  • Tide’s public developer portal is mainly Open Banking (AIS/PIS for regulated TPPs).
+  • Online card payments on Tide are Instant Checkout and Payment Links, created in
+    the Tide business app (card processing partnered with Adyen).
+  • There is no Stripe-style automatic webhook event stream for “payment link paid”
+    that we can subscribe to the same way as checkout.session.completed.
+
+So the integration model changed from “server creates a Stripe session” to
+“server redirects to your pre-made Tide payment links, then marks paid when
+you/automation confirms via our own webhook.”
+
+
+2. What was removed
+-------------------
+  • stripe npm package (no longer a dependency)
+  • STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET usage
+  • POST /api/webhooks/stripe as a working handler (now returns 410 with a pointer
+    to the Tide webhook)
+  • Stripe Checkout Session creation
+  • Stripe-specific success page session lookup
+  • Storefront copy that said “Stripe Checkout”
+
+Old .env Stripe values (if any) may exist as local backups named like
+.env.stripe-backup-* — those files are gitignored and not part of the repo.
+
+
+3. What was added for Tide
+--------------------------
+Server modules:
+
+  server/tide.js
+    • Maps product IDs to env keys (e.g. t14s-416 → TIDE_LINK_T14S_416)
+    • Resolves Instant Checkout / Payment Link URLs from .env
+    • Builds redirect URL (appends order_ref query params when possible)
+    • Verifies TIDE_WEBHOOK_SECRET for confirmation calls
+
+  server/orders.js (rewritten for Tide)
+    • Pending orders on Buy Now
+    • paymentProvider: "tide"
+    • markPaidFromTide() for confirmation webhook
+    • Public order view by orderRef (success page)
+
+  server/index.js (rewritten without Stripe)
+    • POST /api/create-checkout-session
+        → creates pending order
+        → returns Tide link URL for redirect
+    • POST /api/webhooks/tide
+        → auth with TIDE_WEBHOOK_SECRET
+        → marks order paid
+        → sends WhatsApp (best-effort)
+    • GET /api/orders/:orderRef
+    • GET /api/health reports provider: "tide"
+
+Config (.env.example):
+
+  BASE_URL=
+  TIDE_LINK_TEST_1=          # £1 test stock
+  TIDE_LINK_T14S_339=
+  TIDE_LINK_T14S_416=
+  TIDE_LINK_T14S_430=
+  TIDE_LINK_T14S_500=
+  TIDE_LINK_T14S_530=
+  TIDE_WEBHOOK_SECRET=       # invent a long random string; not issued by Tide
+  WHATSAPP_TOKEN=
+  WHATSAPP_PHONE_NUMBER_ID=
+  WHATSAPP_TO=
+  WHATSAPP_API_VERSION=v21.0
+
+Frontend:
+
+  • thinkpad-t14s.html — Buy Now → /api/create-checkout-session → Tide URL
+  • success.html — looks up order by order_ref (does NOT mark paid)
+  • cancel.html — Tide-aware copy
+  • index.html — “Tide Checkout” wording
+  • README.md — full design + Tide setup docs
+
+
+4. Checkout flow (current)
+--------------------------
+  1. Customer selects an in-stock product and clicks Buy Now.
+  2. Browser POSTs { productId, quantity: 1 } to /api/create-checkout-session.
+  3. Server creates a pending order (orderRef like TYN-YYYYMMDD-XXXXXX).
+  4. Server returns the Tide Instant Checkout / Payment Link for that product.
+  5. Browser redirects customer to Tide to pay (card / Apple Pay as Tide supports).
+  6. Payment confirmation is NOT automatic from Tide into this app.
+  7. When payment is known to have succeeded, call:
+
+       POST /api/webhooks/tide
+       Authorization: Bearer <TIDE_WEBHOOK_SECRET>
+       Content-Type: application/json
+
+       {
+         "orderRef": "TYN-…",
+         "customerName": "optional",
+         "customerEmail": "optional",
+         "status": "paid"
+       }
+
+  8. Order is marked paid in data/orders.json.
+  9. WhatsApp business notification is attempted (Meta Cloud API).
+ 10. If WhatsApp fails, the order STAYS paid; error is logged only.
+
+Success page is informational only — not the source of truth for “paid”.
+
+
+5. WhatsApp (unchanged in intent, still optional)
+-------------------------------------------------
+  • Triggered only after paid confirmation (webhook).
+  • Meta WhatsApp Business Cloud API (not wa.me links).
+  • Message includes: New Order Received, order ref, name, email, laptop,
+    quantity, total paid, date/time.
+  • Credentials stay blank/pasteable until ready.
+  • If WHATSAPP_* are empty, send is skipped and logged.
+
+
+6. Stock policy (after Stripe removal, latest change)
+-----------------------------------------------------
+All real ThinkPad listings are OUT OF STOCK.
+
+Only purchasable SKU:
+
+  id:          test-1
+  name:        Test stock — £1 checkout
+  price:       £1.00 (100 pence)
+  env link:    TIDE_LINK_TEST_1
+  purpose:     End-to-end Tide payment testing (not a laptop)
+
+Out of stock (shown, Buy Now disabled):
+
+  t14s-339  £339  256GB
+  t14s-416  £416  512GB
+  t14s-430  £430  512GB
+  t14s-500  £500  512GB
+  t14s-530  £530  512GB
+
+Server rejects checkout for inStock: false with HTTP 409.
+
+
+7. Design / site (still in place)
+---------------------------------
+  • Shared layout.css + themes.css
+  • body.site.theme-technology (dark amber)
+  • Marketing home: index.html
+  • Store: thinkpad-t14s.html (filters, sort, compare, price guide)
+  • Family nav/footer to other Tyneside sites
+  • No full redesign when payments changed — only payment provider + copy
+
+
+8. Git
+------
+  • Repository initialised in this folder
+  • Branch: main
+  • Initial commit includes Tide integration, store, server, README, OOS + £1 test
+  • Secrets (.env), node_modules, data/orders.json are gitignored
+
+
+9. What you still need to paste to go live on payments
+------------------------------------------------------
+Minimum for a test purchase:
+
+  1. In Tide app: create Instant Checkout / Payment Link for £1
+  2. Paste URL into .env as TIDE_LINK_TEST_1=https://…
+  3. Ensure TIDE_WEBHOOK_SECRET is set (long random string)
+  4. Restart: npm start
+  5. Open store → Buy Now on £1 test stock
+  6. After Tide shows payment, POST /api/webhooks/tide with that orderRef
+     (or wire automation later)
+
+Optional:
+
+  • WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_TO for alerts
+  • TIDE_LINK_T14S_* when real laptops return to stock (and flip inStock: true
+    in server/catalog.js)
+
+
+10. How to run
+--------------
+  cd tyneside.technology-main
+  npm install
+  cp .env.example .env   # if needed, then paste Tide links
+  npm start
+
+  http://localhost:3000/
+  http://localhost:3000/thinkpad-t14s.html
+  http://localhost:3000/api/health
+
+
+11. File map (payment-related after Stripe removal)
+---------------------------------------------------
+  server/index.js      Express API + static hosting
+  server/catalog.js    Products, prices, inStock
+  server/orders.js     Order store
+  server/tide.js       Tide links + webhook auth
+  server/whatsapp.js   Meta WhatsApp send
+  .env.example         Paste template
+  README.md            Design + setup docs
+  thinkpad-t14s.html   Store UI
+  success.html         Post-redirect status
+  cancel.html          Abandoned checkout
+  data/orders.json     Local order records (not in git)
+
+
+12. Bottom line
+---------------
+Stripe is fully out. Tide Instant Checkout links are the payment path.
+Orders are tracked by this app; “paid” + WhatsApp only after your Tide
+confirmation webhook. Real laptops are OOS; only £1 test stock is buyable
+until you restock and turn listings back on.
+
+End of summary.
