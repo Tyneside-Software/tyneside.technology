@@ -440,6 +440,68 @@ a:hover {
   text-decoration: underline;
 }
 
+/* Quiet CV link on the software homepage — present for crawlers, easy to miss. */
+a.quiet-cv {
+  opacity: 0.32;
+  text-decoration: none;
+  font-size: 0.72em;
+  letter-spacing: 0.04em;
+}
+a.quiet-cv:hover,
+a.quiet-cv:focus {
+  opacity: 0.85;
+  text-decoration: underline;
+}
+
+.cv-hero h1 {
+  letter-spacing: 0.04em;
+}
+
+.cv-role {
+  margin-bottom: 1.15rem;
+}
+
+.cv-role-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.35rem 1.25rem;
+  align-items: baseline;
+  margin-bottom: 0.65rem;
+}
+
+.cv-role-head h3 {
+  margin: 0;
+}
+
+.cv-org {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+}
+
+.cv-dates {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+@media print {
+  .site-nav,
+  .site-footer,
+  .nav-cta,
+  .hero-actions,
+  .btn {
+    display: none !important;
+  }
+  .hero {
+    padding-top: 0;
+  }
+  a[href]::after {
+    content: none !important;
+  }
+}
+
 /* —— SECTIONS —— */
 .section {
   padding: 3.25rem 0;
